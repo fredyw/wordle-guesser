@@ -30,41 +30,41 @@ func guessWords(dictionaryPath string, constraint constraint) []string {
 		if len(word) == 0 {
 			continue
 		}
-		validChars := validChars(constraint.wrongSpots)
-		count := 0
-		for _, c := range word {
-			if _, found := validChars[string(c)]; found {
-				count++
-			}
-		}
-		// Make sure that the word contains all valid characters.
-		if count < len(validChars) {
-			continue
-		}
-		possibleWord := true
-		for i, c := range word {
-			if _, found := constraint.invalid[string(c)]; found {
-				possibleWord = false
-				break
-			}
-			if correctSpot, found := constraint.correctSpots[i+1]; found {
-				if _, found := correctSpot[string(c)]; !found {
-					possibleWord = false
-					break
-				}
-			}
-			if wrongSpot, found := constraint.wrongSpots[i+1]; found {
-				if _, found := wrongSpot[string(c)]; found {
-					possibleWord = false
-					break
-				}
-			}
-		}
-		if possibleWord {
+		if isPossibleWord(word, constraint) {
 			guessedWords = append(guessedWords, word)
 		}
 	}
 	return guessedWords
+}
+
+func isPossibleWord(word string, constraint constraint) bool {
+	validChars := validChars(constraint.wrongSpots)
+	count := 0
+	for _, c := range word {
+		if _, found := validChars[string(c)]; found {
+			count++
+		}
+	}
+	// Make sure that the word contains all valid characters.
+	if count < len(validChars) {
+		return false
+	}
+	for i, c := range word {
+		if _, found := constraint.invalid[string(c)]; found {
+			return false
+		}
+		if correctSpot, found := constraint.correctSpots[i+1]; found {
+			if _, found := correctSpot[string(c)]; !found {
+				return false
+			}
+		}
+		if wrongSpot, found := constraint.wrongSpots[i+1]; found {
+			if _, found := wrongSpot[string(c)]; found {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func validChars(wrongSpots map[int]map[string]bool) map[string]bool {
