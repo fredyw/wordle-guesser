@@ -1,3 +1,3 @@
-module worlde-guesser
+module wordle-guesser
 
 go 1.18
