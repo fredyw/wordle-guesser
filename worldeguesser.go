@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -85,7 +86,7 @@ func init() {
 	flag.StringVar(
 		&dictionaryFlag,
 		"dictionary",
-		"",
+		"sgb-words.txt",
 		"Path to the dictionary file.")
 	flag.StringVar(
 		&correctSpotFlag,
@@ -111,8 +112,8 @@ func init() {
 }
 
 func validateFlags() {
-	if len(dictionaryFlag) == 0 {
-		flag.Usage()
+	if _, err := os.Stat(dictionaryFlag); errors.Is(err, os.ErrNotExist) {
+		fmt.Println("Error:", dictionaryFlag, "does not exist")
 		os.Exit(1)
 	}
 	if len(correctSpotFlag) > 0 {
@@ -133,9 +134,15 @@ func validateCharSpotFlag(charSpotFlag string) {
 	}
 }
 
-func buildConstraint() constraint {
-	correctSpots := buildCharSpotConstraint(correctSpotFlag)
-	wrongSpots := buildCharSpotConstraint(wrongSpotFlag)
+func buildConstraint() (constraint, error) {
+	correctSpots, err := buildCharSpotConstraint(correctSpotFlag)
+	if err != nil {
+		return constraint{}, err
+	}
+	wrongSpots, err := buildCharSpotConstraint(wrongSpotFlag)
+	if err != nil {
+		return constraint{}, err
+	}
 	invalid := map[string]bool{}
 	for _, c := range strings.Split(invalidFlag, ",") {
 		invalid[c] = true
@@ -144,10 +151,10 @@ func buildConstraint() constraint {
 		correctSpots: correctSpots,
 		wrongSpots:   wrongSpots,
 		invalid:      invalid,
-	}
+	}, nil
 }
 
-func buildCharSpotConstraint(charSpotFlag string) map[int]map[string]bool {
+func buildCharSpotConstraint(charSpotFlag string) (map[int]map[string]bool, error) {
 	charSpots := map[int]map[string]bool{}
 	if len(charSpotFlag) > 0 {
 		for _, p := range strings.Split(charSpotFlag, ";") {
@@ -160,20 +167,25 @@ func buildCharSpotConstraint(charSpotFlag string) map[int]map[string]bool {
 			}
 			p, err := strconv.Atoi(position)
 			if err != nil {
-				fmt.Println("Invalid position", position)
-				os.Exit(1)
+				return nil, errors.New(fmt.Sprintf("Invalid position %s", position))
 			}
 			charSpots[p] = m
 		}
 	}
-	return charSpots
+	return charSpots, nil
 }
 
 func main() {
 	flag.Parse()
 	validateFlags()
+	constraint, err := buildConstraint()
+	if err != nil {
+		fmt.Println("Error:", err.Error())
+		os.Exit(1)
+	}
+	words := guessWords(dictionaryFlag, constraint)
 	fmt.Println("Possible words:")
-	for _, word := range guessWords(dictionaryFlag, buildConstraint()) {
+	for _, word := range words {
 		fmt.Println("-", word)
 	}
 }
