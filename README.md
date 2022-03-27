@@ -7,6 +7,7 @@ go build
 ```
 
 ## Usage
+```
 Usage of ./worlde-guesser:
   -correct-spot string
         Characters in the correct spots.
@@ -22,3 +23,4 @@ Usage of ./worlde-guesser:
         Characters in the wrong spots.
         Format : <position1>:<characters>;<position2>:<characters>,...
         Example: 2:e;3:p,e;4:o
+```
